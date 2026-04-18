@@ -1,4 +1,4 @@
-// D-Budg | Session 3 | Build 5 | 2026-04-18 | Remove MS budget, Medical label at $400
+// D-Budg | Session 3 | Build 7 | 2026-04-18 | Strategy tile, LA/DC buttons, Fidelity rename, lifetime income/expense tiles
 
 import { useState, useEffect } from "react";
 import {
@@ -81,6 +81,20 @@ function calcTargetDraw(nestEgg, returnPct, inflationPct) {
   return (lo + hi) / 2;
 }
 
+function calcTotalDraws(monthlyDraw, inflationPct, totalMonths) {
+  let total = 0, draw = monthlyDraw;
+  const mInflation = inflationPct / 100 / 12;
+  for (let m = 0; m < totalMonths; m++) { total += draw; draw *= (1 + mInflation); }
+  return total;
+}
+
+function calcTotalExpenses(monthlyExpenses, inflationPct, totalMonths) {
+  let total = 0, exp = monthlyExpenses;
+  const mInflation = inflationPct / 100 / 12;
+  for (let m = 0; m < totalMonths; m++) { total += exp; exp *= (1 + mInflation); }
+  return total;
+}
+
 function NumInput({ val, onChange, pct }) {
   const [focused, setFocused] = useState(false);
   const display = focused
@@ -132,13 +146,18 @@ export default function App() {
     const mReturn = proj.returnPct / 100 / 12, mInflation = proj.inflationPct / 100 / 12;
     let months = 0;
     while (bal > 0 && months < 1200) { bal = bal * (1 + mReturn) - draw; draw *= (1 + mInflation); months++; }
-    if (months >= 1200) return { years: 99, months: 0, date: null };
+    if (months >= 1200) return { years: 99, months: 0, totalMonths: 1200, date: null };
     const d = new Date(); d.setMonth(d.getMonth() + months);
-    return { years: Math.floor(months / 12), months: months % 12, date: d };
+    return { years: Math.floor(months / 12), months: months % 12, totalMonths: months, date: d };
   })();
 
   const targetDraw = calcTargetDraw(nestEgg, proj.returnPct, proj.inflationPct);
   const tenYrDelta = monthlyDraw - targetDraw;
+
+  const totalSS = income.socialSecurity * runway.totalMonths;
+  const totalFidelityDraws = calcTotalDraws(monthlyDraw, proj.inflationPct, runway.totalMonths);
+  const totalIncome = totalSS + totalFidelityDraws;
+  const totalExpenses = calcTotalExpenses(monthlyExpenses, proj.inflationPct, runway.totalMonths);
 
   const resetAll = () => { setDmv(SEED_DMV); setIncome(SEED_INCOME); setHouse(SEED_HOUSE); setProj(SEED_PROJ); };
 
@@ -147,7 +166,14 @@ export default function App() {
       <style>{CSS}</style>
       <Nav screen={screen} setScreen={setScreen} />
       <div style={S.wrap}>
-        {screen === "dashboard" && <Dashboard nestEgg={nestEgg} houseNetRent={houseNetRent} houseNetBuy={houseNetBuy} house={house} setHouse={setHouse} monthlyDraw={monthlyDraw} runway={runway} tenYrDelta={tenYrDelta} />}
+        {screen === "dashboard" && (
+          <Dashboard
+            nestEgg={nestEgg} houseNetRent={houseNetRent} houseNetBuy={houseNetBuy}
+            house={house} setHouse={setHouse} monthlyDraw={monthlyDraw} runway={runway}
+            tenYrDelta={tenYrDelta} proj={proj} setProj={setProj}
+            totalIncome={totalIncome} totalExpenses={totalExpenses}
+          />
+        )}
         {screen === "budget" && <Budget dmv={dmv} setDmv={setDmv} income={income} setIncome={setIncome} fidelityWithdrawal={fidelityWithdrawal} resetAll={resetAll} />}
         {screen === "house" && <HouseDeal house={house} setHouse={setHouse} houseNet={houseNet} />}
         {screen === "projection" && <Projection nestEgg={nestEgg} monthlyDraw={monthlyDraw} proj={proj} setProj={setProj} />}
@@ -157,7 +183,7 @@ export default function App() {
 }
 
 function Nav({ screen, setScreen }) {
-  const tabs = [["dashboard", "Dashboard"], ["budget", "Budget"], ["house", "House Sale"], ["projection", "Cash & Investments"]];
+  const tabs = [["dashboard", "Dashboard"], ["budget", "Budget"], ["house", "House Deal"], ["projection", "Cash & Investments"]];
   return (
     <nav style={S.nav}>
       <div style={S.brand}>D·Budg</div>
@@ -181,21 +207,12 @@ function JoshTile({ house, setHouse }) {
         <div style={{ position: "relative", margin: "6px auto", width: 120 }}>
           <span style={{ position: "absolute", left: 8, top: "50%", transform: "translateY(-50%)", color: "#9A8060", fontSize: 17 }}>$</span>
           <input
-            type="text"
-            inputMode="decimal"
-            autoFocus
+            type="text" inputMode="decimal" autoFocus
             style={{ ...S.numInput, width: 120, fontSize: 20, textAlign: "right" }}
             value={raw}
             onChange={e => setRaw(e.target.value.replace(/,/g, ""))}
-            onBlur={() => {
-              const n = parseFloat(raw);
-              setHouse(h => ({ ...h, joshGift: isNaN(n) ? 0 : n }));
-              setEditing(false);
-            }}
-            onKeyDown={e => {
-              if (e.key === "Enter") e.target.blur();
-              if (e.key === "Escape") setEditing(false);
-            }}
+            onBlur={() => { const n = parseFloat(raw); setHouse(h => ({ ...h, joshGift: isNaN(n) ? 0 : n })); setEditing(false); }}
+            onKeyDown={e => { if (e.key === "Enter") e.target.blur(); if (e.key === "Escape") setEditing(false); }}
           />
         </div>
       ) : (
@@ -206,14 +223,40 @@ function JoshTile({ house, setHouse }) {
   );
 }
 
-function Dashboard({ nestEgg, houseNetRent, houseNetBuy, house, setHouse, monthlyDraw, runway, tenYrDelta }) {
+function Dashboard({ nestEgg, houseNetRent, houseNetBuy, house, setHouse, monthlyDraw, runway, tenYrDelta, proj, setProj, totalIncome, totalExpenses }) {
   const runoutSoon = runway.date && runway.years < 5;
   const rentSelected = house.rentInstead;
+  const [cityToast, setCityToast] = useState(null);
+
+  const handleCityTap = (city) => {
+    setCityToast(city);
+    setTimeout(() => setCityToast(null), 2000);
+  };
+
+  const toggleStrategy = () => {
+    if (proj.strategy === "moneyMarket") {
+      setProj(p => ({ ...p, strategy: "fisher", returnPct: 5, manualReturn: false }));
+    } else {
+      setProj(p => ({ ...p, strategy: "moneyMarket", returnPct: 2.5, manualReturn: false }));
+    }
+  };
+
+  const stratLabel = proj.strategy === "fisher" ? "Fidelity Portfolio  5%" : "Money Market  2.5%";
+  const runwayLabel = runway.years >= 99 ? "100+ years" : runway.years + "y " + runway.months + "m";
+
   return (
     <div>
       <div style={S.heroWrap}>
         <div style={{ ...S.heroBg, backgroundImage: "url(/denise.jpg), linear-gradient(135deg,#8B6914 0%,#C9A84C 40%,#F5DEB3 70%,#C9A84C 100%)" }} />
         <div style={S.heroShade} />
+        <div style={{ position: "absolute", top: 16, left: 0, right: 0, display: "flex", justifyContent: "space-between", padding: "0 20px", zIndex: 10 }}>
+          <button style={S.cityBtn} onClick={() => handleCityTap("LA")}>
+            {cityToast === "LA" ? "✨ Coming Soon" : "🌴 LA Scenario"}
+          </button>
+          <button style={S.cityBtn} onClick={() => handleCityTap("DC")}>
+            {cityToast === "DC" ? "✨ Coming Soon" : "🏛 DC Scenario"}
+          </button>
+        </div>
         <div style={S.heroText}>
           <div style={S.heroRunway}>{runway.years >= 99 ? "∞" : runway.years + "y " + runway.months + "m"}</div>
           <div style={S.heroSub}>Runway Remaining</div>
@@ -228,16 +271,16 @@ function Dashboard({ nestEgg, houseNetRent, houseNetBuy, house, setHouse, monthl
         <Stat label="Fidelity Account" value={fmt(house.fidelityBalance)} sub={"As of " + house.fidelityDate} />
         <div style={{ ...S.stat, background: "#FFF9EF", border: rentSelected ? "2px solid #C9A84C" : "1px solid #F0DEB4", cursor: "pointer", position: "relative" }}
           onClick={() => setHouse(h => ({ ...h, rentInstead: true }))}>
-          <div style={{ ...S.statLbl, color: "#9A8060" }}>House Proceeds — Rent</div>
+          <div style={{ ...S.statLbl, color: "#9A8060" }}>House Proceeds</div>
           <div style={{ ...S.statVal, color: rentSelected ? "#C9A84C" : "#1A1208" }}>{fmt(houseNetRent)}</div>
-          <div style={{ ...S.statSub, color: "#9A8060" }}>Keep full proceeds</div>
+          <div style={{ ...S.statSub, color: "#9A8060" }}>Rent Scenario</div>
           {rentSelected && <div style={{ ...S.badge, position: "relative", top: "auto", right: "auto", marginTop: 8, display: "inline-block" }}>✓ Selected</div>}
         </div>
         <div style={{ ...S.stat, background: "#FFF9EF", border: !rentSelected ? "2px solid #C9A84C" : "1px solid #F0DEB4", cursor: "pointer", position: "relative" }}
           onClick={() => setHouse(h => ({ ...h, rentInstead: false }))}>
-          <div style={{ ...S.statLbl, color: "#9A8060" }}>House Proceeds — Buy</div>
+          <div style={{ ...S.statLbl, color: "#9A8060" }}>House Proceeds</div>
           <div style={{ ...S.statVal, color: !rentSelected ? "#C9A84C" : "#1A1208" }}>{fmt(houseNetBuy)}</div>
-          <div style={{ ...S.statSub, color: "#9A8060" }}>After down payment</div>
+          <div style={{ ...S.statSub, color: "#9A8060" }}>Buy Scenario</div>
           {!rentSelected && <div style={{ ...S.badge, position: "relative", top: "auto", right: "auto", marginTop: 8, display: "inline-block" }}>✓ Selected</div>}
         </div>
         <JoshTile house={house} setHouse={setHouse} />
@@ -248,6 +291,24 @@ function Dashboard({ nestEgg, houseNetRent, houseNetBuy, house, setHouse, monthl
           value={fmt(Math.abs(tenYrDelta))}
           sub={tenYrDelta > 0.5 ? "Cut per month" : tenYrDelta < -0.5 ? "Monthly headroom" : "Right on target"}
           theme={tenYrDelta > 0.5 ? "danger" : "gold"}
+        />
+        <div style={{ ...S.stat, background: "#1A1208", border: "2px solid #C9A84C", cursor: "pointer" }}
+          onClick={toggleStrategy}>
+          <div style={{ ...S.statLbl, color: "#9A8060" }}>Investment Strategy</div>
+          <div style={{ ...S.statVal, color: "#C9A84C", fontSize: 18, lineHeight: 1.3 }}>{stratLabel}</div>
+          <div style={{ ...S.statSub, color: "#7A6040" }}>Tap to toggle · adjust on Cash & Investments tab</div>
+        </div>
+        <Stat
+          label="Lifetime Income"
+          value={fmt(totalIncome)}
+          sub={"SS + Fidelity over " + runwayLabel}
+          theme="gold"
+        />
+        <Stat
+          label="Lifetime Expenses"
+          value={fmt(totalExpenses)}
+          sub={"Inflation-adjusted over " + runwayLabel}
+          theme="danger"
         />
       </div>
     </div>
@@ -283,8 +344,7 @@ function Budget({ dmv, setDmv, income, setIncome, fidelityWithdrawal, resetAll }
       </Card>
       <Card title="Expenses — DMV">
         {Object.keys(DMV_LABELS).map(k => (
-          <BRow key={k} label={DMV_LABELS[k]} val={dmv[k]}
-            onChange={v => setDmv(p => ({ ...p, [k]: v }))} />
+          <BRow key={k} label={DMV_LABELS[k]} val={dmv[k]} onChange={v => setDmv(p => ({ ...p, [k]: v }))} />
         ))}
         <TotalRow label="Monthly" main={dmvTotal} />
         <TotalRow label="Annual" main={dmvTotal * 12} />
@@ -373,16 +433,17 @@ function Projection({ nestEgg, monthlyDraw, proj, setProj }) {
   const curLine = buildProjectionLine(nestEgg, monthlyDraw, proj.returnPct, proj.inflationPct);
   const chartData = mmLine.map((d, i) => ({
     label: i === 0 ? "Now" : i + "yr", age: d.age,
-    "Money Market": mmLine[i].balance, "Fisher Portfolio": fishLine[i].balance,
+    "Money Market": mmLine[i].balance,
+    "Fidelity Portfolio": fishLine[i].balance,
     ...(proj.manualReturn ? { "Custom": curLine[i].balance } : {}),
   }));
   const firstNeg = chartData.find(d => d["Money Market"] < 0);
   return (
     <div style={S.page}>
-      <h2 style={S.pageTitle}>Projection</h2>
+      <h2 style={S.pageTitle}>Cash & Investments</h2>
       <Card title="Investment Strategy">
         <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 16 }}>
-          {[["moneyMarket", "Money Market  2.5%"], ["fisher", "Fisher Portfolio  5%"]].map(([id, lbl]) => (
+          {[["moneyMarket", "Money Market  2.5%"], ["fisher", "Fidelity Portfolio  5%"]].map(([id, lbl]) => (
             <button key={id} style={{ ...S.stratBtn, ...(proj.strategy === id && !proj.manualReturn ? S.stratBtnOn : {}) }}
               onClick={() => setProj(p => ({ ...p, strategy: id, returnPct: id === "moneyMarket" ? 2.5 : 5, manualReturn: false }))}>{lbl}</button>
           ))}
@@ -391,7 +452,7 @@ function Projection({ nestEgg, monthlyDraw, proj, setProj }) {
           <strong style={{ color: "#1A1208" }}>Money Market:</strong> Cash sitting safe — preserves principal but likely loses ground to inflation over time.
         </p>
         <p style={{ color: "#9A8060", fontSize: 14, lineHeight: 1.7, marginBottom: 20 }}>
-          <strong style={{ color: "#1A1208" }}>Fisher Portfolio:</strong> 50% bonds (IEF) / 40% S&P 500 (VOO) / 10% International (VEA) — more growth, more short-term volatility.
+          <strong style={{ color: "#1A1208" }}>Fidelity Portfolio:</strong> 50% bonds (IEF) / 40% S&P 500 (VOO) / 10% International (VEA) — more growth, more short-term volatility.
         </p>
         <div style={{ display: "flex", gap: 32, flexWrap: "wrap" }}>
           <SliderField label="Return %" value={proj.returnPct} min={0} max={12} step={0.5}
@@ -410,7 +471,7 @@ function Projection({ nestEgg, monthlyDraw, proj, setProj }) {
             <Tooltip formatter={(v, name) => [fmt(v), name]} contentStyle={{ fontFamily: "Cormorant Garamond, serif", background: "#FAF0DC", border: "1px solid #C9A84C", borderRadius: 6 }} />
             <Legend wrapperStyle={{ fontFamily: "Cormorant Garamond, serif", fontSize: 14 }} />
             <Line type="monotone" dataKey="Money Market" stroke="#C9A84C" strokeWidth={2.5} dot={false} />
-            <Line type="monotone" dataKey="Fisher Portfolio" stroke="#8B4513" strokeWidth={2.5} strokeDasharray="6 3" dot={false} />
+            <Line type="monotone" dataKey="Fidelity Portfolio" stroke="#8B4513" strokeWidth={2.5} strokeDasharray="6 3" dot={false} />
             {proj.manualReturn && <Line type="monotone" dataKey="Custom" stroke="#4A90D9" strokeWidth={2} strokeDasharray="3 3" dot={false} />}
           </LineChart>
         </ResponsiveContainer>
@@ -418,16 +479,16 @@ function Projection({ nestEgg, monthlyDraw, proj, setProj }) {
       <Card title="Year by Year">
         <div style={{ overflowX: "auto" }}>
           <table style={S.table}>
-            <thead><tr>{["Year", "Age", "Money Market", "Fisher Portfolio"].map(h => <th key={h} style={S.th}>{h}</th>)}</tr></thead>
+            <thead><tr>{["Year", "Age", "Money Market", "Fidelity Portfolio"].map(h => <th key={h} style={S.th}>{h}</th>)}</tr></thead>
             <tbody>
               {chartData.map((d, i) => {
-                const mmNeg = d["Money Market"] < 0, fNeg = d["Fisher Portfolio"] < 0;
+                const mmNeg = d["Money Market"] < 0, fNeg = d["Fidelity Portfolio"] < 0;
                 return (
                   <tr key={i} style={mmNeg ? { background: "#FFF0F0" } : i % 2 === 0 ? { background: "#FEFAF2" } : {}}>
                     <td style={S.td}>{d.label}</td>
                     <td style={S.td}>{d.age}</td>
                     <td style={{ ...S.td, color: mmNeg ? "#C0392B" : "#1A1208", fontWeight: mmNeg ? 700 : 500 }}>{fmt(d["Money Market"])}</td>
-                    <td style={{ ...S.td, color: fNeg ? "#C0392B" : "#1A1208", fontWeight: fNeg ? 700 : 500 }}>{fmt(d["Fisher Portfolio"])}</td>
+                    <td style={{ ...S.td, color: fNeg ? "#C0392B" : "#1A1208", fontWeight: fNeg ? 700 : 500 }}>{fmt(d["Fidelity Portfolio"])}</td>
                   </tr>
                 );
               })}
@@ -473,6 +534,7 @@ const S = {
   heroRunway: { fontFamily: "'Playfair Display', Georgia, serif", fontSize: 80, fontWeight: 700, color: "#C9A84C", lineHeight: 1, textShadow: "0 2px 24px rgba(0,0,0,.6)" },
   heroSub: { color: "#F5DEB3", fontSize: 14, letterSpacing: 5, textTransform: "uppercase", marginTop: 6, fontStyle: "italic" },
   heroRunout: { fontSize: 15, marginTop: 10, letterSpacing: 1 },
+  cityBtn: { background: "rgba(26,18,8,0.65)", border: "1px solid rgba(201,168,76,0.6)", color: "#F5DEB3", fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: 13, padding: "6px 14px", borderRadius: 20, cursor: "pointer", letterSpacing: 0.5, backdropFilter: "blur(4px)", WebkitBackdropFilter: "blur(4px)" },
   statGrid: { display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: 14, padding: "20px 20px 0" },
   stat: { borderRadius: 8, padding: 18, textAlign: "center" },
   statLbl: { fontSize: 10, textTransform: "uppercase", letterSpacing: 2, marginBottom: 6 },
