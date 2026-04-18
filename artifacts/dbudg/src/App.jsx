@@ -7,7 +7,7 @@ import {
 
 const SEED_DMV = {
   rent: 2100, hoa: 0, insurance: 30, utilities: 200, uber: 200,
-  medication: 200, housekeeper: 200, cable: 75, mobile: 50,
+  medication: 400, housekeeper: 200, cable: 75, mobile: 50,
   cigarettes: 280, groceries: 800, personal: 400,
 };
 
@@ -19,7 +19,7 @@ const SEED_MS = {
 
 const DMV_LABELS = {
   rent: "Rent", hoa: "HOA", insurance: "Home / Renters Insurance",
-  utilities: "Utilities", uber: "Uber / Transit", medication: "Medication",
+  utilities: "Utilities", uber: "Uber / Transit", medication: "Medical",
   housekeeper: "Housekeeper", cable: "Cable / Internet", mobile: "Mobile Phone",
   cigarettes: "Cigarettes", groceries: "Groceries", personal: "Skin Care, Hair & Clothing",
 };
