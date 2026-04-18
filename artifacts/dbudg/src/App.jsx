@@ -182,7 +182,7 @@ function JoshTile({ house, setHouse }) {
   return (
     <div style={{ ...S.stat, background: "#FFF0F0", border: "2px solid #C0392B", cursor: "pointer" }}
       onClick={() => { if (!editing) { setRaw(String(house.joshGift || 0)); setEditing(true); } }}>
-      <div style={{ ...S.statLbl, color: "#9A8060" }}>Josh Gift</div>
+      <div style={{ ...S.statLbl, color: "#9A8060" }}>Josh Gift for Downpayment</div>
       {editing ? (
         <div style={{ position: "relative", margin: "6px auto", width: 120 }}>
           <span style={{ position: "absolute", left: 8, top: "50%", transform: "translateY(-50%)", color: "#9A8060", fontSize: 17 }}>$</span>
