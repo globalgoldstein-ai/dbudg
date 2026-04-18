@@ -74,7 +74,8 @@ export default function App() {
   const [screen, setScreen] = useState("dashboard");
   const [dmv,    setDmv]    = useState(() => LS.get("dmv",    SEED_DMV));
   const [income, setIncome] = useState(() => LS.get("income", SEED_INCOME));
-  const [house,  setHouse]  = useState(() => LS.get("house",  SEED_HOUSE));
+const [house,  setHouse]  = useState(() => ({ ...SEED_HOUSE, ...LS.get("house", {}) }));
+  
   const [proj,   setProj]   = useState(() => LS.get("proj",   SEED_PROJ));
 
   useEffect(() => LS.set("dmv",    dmv),    [dmv]);
