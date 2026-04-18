@@ -1,4 +1,4 @@
-// D-Budg | Session 3 | Build 3 | 2026-04-18 | Josh gift tile, inline editable, reduces nest egg
+// D-Budg | Session 3 | Build 5 | 2026-04-18 | Remove MS budget, Medical label at $400
 
 import { useState, useEffect } from "react";
 import {
@@ -9,12 +9,6 @@ const SEED_DMV = {
   rent: 2100, hoa: 0, insurance: 30, utilities: 200, uber: 200,
   medication: 400, housekeeper: 200, cable: 75, mobile: 50,
   cigarettes: 280, groceries: 800, personal: 400,
-};
-
-const SEED_MS = {
-  rent: 632, hoa: 0, insurance: 300, utilities: 300, uber: 50,
-  medication: 100, housekeeper: 200, cable: 238, mobile: 150,
-  cigarettes: 280, groceries: 1300, personal: 1000,
 };
 
 const DMV_LABELS = {
@@ -276,7 +270,6 @@ function Stat({ label, value, sub, theme }) {
 
 function Budget({ dmv, setDmv, income, setIncome, fidelityWithdrawal, resetAll }) {
   const dmvTotal = sumObj(dmv);
-  const msTotal = sumObj(SEED_MS);
   return (
     <div style={S.page}>
       <h2 style={S.pageTitle}>Budget</h2>
@@ -288,42 +281,33 @@ function Budget({ dmv, setDmv, income, setIncome, fidelityWithdrawal, resetAll }
         </div>
         <TotalRow label="Monthly Total" main={income.socialSecurity + fidelityWithdrawal} />
       </Card>
-      <Card title="Expenses — DMV New">
-        <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 4 }}>
-          <span style={{ color: "#9A8060", fontSize: 13 }}>MS Old (ref)</span>
-        </div>
+      <Card title="Expenses — DMV">
         {Object.keys(DMV_LABELS).map(k => (
-          <BRow key={k} label={DMV_LABELS[k]} val={dmv[k]} compare={SEED_MS[k]}
+          <BRow key={k} label={DMV_LABELS[k]} val={dmv[k]}
             onChange={v => setDmv(p => ({ ...p, [k]: v }))} />
         ))}
-        <TotalRow label="Monthly" main={dmvTotal} compare={msTotal} />
-        <TotalRow label="Annual" main={dmvTotal * 12} compare={msTotal * 12} />
+        <TotalRow label="Monthly" main={dmvTotal} />
+        <TotalRow label="Annual" main={dmvTotal * 12} />
       </Card>
       <button style={S.resetBtn} onClick={resetAll}>Reset All to Defaults</button>
     </div>
   );
 }
 
-function BRow({ label, val, onChange, compare }) {
+function BRow({ label, val, onChange }) {
   return (
     <div style={S.brow}>
       <span style={S.browLbl}>{label}</span>
-      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-        {compare != null && <span style={{ color: "#9A8060", fontSize: 16, minWidth: 80, textAlign: "right" }}>{fmt(compare)}</span>}
-        <NumInput val={val} onChange={onChange} />
-      </div>
+      <NumInput val={val} onChange={onChange} />
     </div>
   );
 }
 
-function TotalRow({ label, main, compare }) {
+function TotalRow({ label, main }) {
   return (
     <div style={{ ...S.brow, borderBottom: "none", paddingTop: 14, fontWeight: 700 }}>
       <span>{label}</span>
-      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-        {compare != null && <span style={{ color: "#9A8060", fontSize: 16, minWidth: 80, textAlign: "right" }}>{fmt(compare)}</span>}
-        <span style={S.goldNum}>{fmt(main)}</span>
-      </div>
+      <span style={S.goldNum}>{fmt(main)}</span>
     </div>
   );
 }
