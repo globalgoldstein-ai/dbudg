@@ -301,13 +301,13 @@ function Dashboard({ nestEgg, houseNetRent, houseNetBuy, house, setHouse, monthl
         <Stat
           label="Lifetime Income"
           value={fmt(totalIncome)}
-          sub={"SS + Fidelity over " + runwayLabel}
+         sub={"SS + Fidelity draws · " + runwayLabel}
           theme="gold"
         />
         <Stat
           label="Lifetime Expenses"
           value={fmt(totalExpenses)}
-          sub={"Inflation-adjusted over " + runwayLabel}
+sub={"During runway · longer strategy = higher total · " + runwayLabel}
           theme="danger"
         />
       </div>
