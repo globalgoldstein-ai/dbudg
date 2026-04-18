@@ -1,4 +1,4 @@
-// D-Budg | Session 3 | Build 7 | 2026-04-18 | Strategy tile, LA/DC buttons, Fidelity rename, lifetime income/expense tiles
+// Build 9 | 2026-04-18 | Lifetime Income subtitle clarified
 
 import { useState, useEffect } from "react";
 import {
@@ -301,7 +301,7 @@ function Dashboard({ nestEgg, houseNetRent, houseNetBuy, house, setHouse, monthl
         <Stat
           label="Lifetime Income"
           value={fmt(totalIncome)}
-         sub={"SS + Fidelity draws · " + runwayLabel}
+       sub={"During runway · SS + Fidelity draws · " + runwayLabel}
           theme="gold"
         />
         <Stat
