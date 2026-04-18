@@ -1,4 +1,4 @@
-// D-Budg | Session 3 | Build 2 | 2026-04-18 | Dollar transaction costs, commas, mobile nav, tile label
+// D-Budg | Session 3 | Build 3 | 2026-04-18 | Josh gift tile, inline editable, reduces nest egg
 
 import { useState, useEffect } from "react";
 import {
@@ -29,6 +29,7 @@ const SEED_HOUSE = {
   repairs: 0, moving: 10000, condoPrice: 300000, downPayment: 100000,
   capGainsRate: 0, rentInstead: true,
   fidelityBalance: 75883, fidelityDate: "April 2026",
+  joshGift: 30000,
 };
 
 const SEED_INCOME = { socialSecurity: 1900 };
@@ -130,7 +131,7 @@ export default function App() {
   const houseNetRent = calcHouseNet({ ...house, rentInstead: true });
   const houseNetBuy = calcHouseNet({ ...house, rentInstead: false });
   const houseNet = house.rentInstead ? houseNetRent : houseNetBuy;
-  const nestEgg = (house.fidelityBalance || 75883) + houseNet;
+  const nestEgg = (house.fidelityBalance || 75883) + houseNet - (house.joshGift || 0);
 
   const runway = (() => {
     let bal = nestEgg, draw = monthlyDraw;
@@ -175,6 +176,42 @@ function Nav({ screen, setScreen }) {
   );
 }
 
+function JoshTile({ house, setHouse }) {
+  const [editing, setEditing] = useState(false);
+  const [raw, setRaw] = useState("");
+  return (
+    <div style={{ ...S.stat, background: "#FFF0F0", border: "2px solid #C0392B", cursor: "pointer" }}
+      onClick={() => { if (!editing) { setRaw(String(house.joshGift || 0)); setEditing(true); } }}>
+      <div style={{ ...S.statLbl, color: "#9A8060" }}>Josh Gift</div>
+      {editing ? (
+        <div style={{ position: "relative", margin: "6px auto", width: 120 }}>
+          <span style={{ position: "absolute", left: 8, top: "50%", transform: "translateY(-50%)", color: "#9A8060", fontSize: 17 }}>$</span>
+          <input
+            type="text"
+            inputMode="decimal"
+            autoFocus
+            style={{ ...S.numInput, width: 120, fontSize: 20, textAlign: "right" }}
+            value={raw}
+            onChange={e => setRaw(e.target.value.replace(/,/g, ""))}
+            onBlur={() => {
+              const n = parseFloat(raw);
+              setHouse(h => ({ ...h, joshGift: isNaN(n) ? 0 : n }));
+              setEditing(false);
+            }}
+            onKeyDown={e => {
+              if (e.key === "Enter") e.target.blur();
+              if (e.key === "Escape") setEditing(false);
+            }}
+          />
+        </div>
+      ) : (
+        <div style={{ ...S.statVal, color: "#C0392B" }}>{fmt(house.joshGift || 0)}</div>
+      )}
+      <div style={{ ...S.statSub, color: "#9A8060" }}>{editing ? "Tap away to save" : "Tap to edit · reduces nest egg"}</div>
+    </div>
+  );
+}
+
 function Dashboard({ nestEgg, houseNetRent, houseNetBuy, house, setHouse, monthlyDraw, runway, tenYrDelta }) {
   const runoutSoon = runway.date && runway.years < 5;
   const rentSelected = house.rentInstead;
@@ -209,6 +246,7 @@ function Dashboard({ nestEgg, houseNetRent, houseNetBuy, house, setHouse, monthl
           <div style={{ ...S.statSub, color: "#9A8060" }}>After down payment</div>
           {!rentSelected && <div style={{ ...S.badge, position: "relative", top: "auto", right: "auto", marginTop: 8, display: "inline-block" }}>✓ Selected</div>}
         </div>
+        <JoshTile house={house} setHouse={setHouse} />
         <Stat label="Total Nest Egg After House Sale" value={fmt(nestEgg)} sub={rentSelected ? "Rent scenario" : "Buy scenario"} theme="gold" />
         <Stat label="Monthly Draw" value={fmt(monthlyDraw)} sub="From nest egg (expenses − SS)" theme="danger" />
         <Stat
@@ -322,6 +360,9 @@ function HouseDeal({ house, setHouse, houseNet }) {
           <HRow label="Down Payment" field="downPayment" house={house} up={up} />
         </>}
         <HRow label="Capital Gains Rate" field="capGainsRate" house={house} up={up} pct />
+      </Card>
+      <Card title="One-Time Gifts">
+        <HRow label="Josh Gift" field="joshGift" house={house} up={up} />
       </Card>
       <div style={{ ...S.card, background: "#1A1208", textAlign: "center", padding: 32 }}>
         <div style={{ color: "#9A8060", fontSize: 12, textTransform: "uppercase", letterSpacing: 3, marginBottom: 8 }}>Net to Nest Egg</div>
@@ -474,4 +515,4 @@ const S = {
   td: { padding: "10px 14px", borderBottom: "1px solid #F0DEB4", fontSize: 18 },
 };
 
-const CSS = "@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400;1,700&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400;1,600&display=swap'); *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; } body { background: #FAF0DC; } input:focus { outline: 2px solid #C9A84C; outline-offset: 1px; } button { transition: opacity .15s; } button:hover { opacity: .8; } .tabs::-webkit-scrollbar { display: none; }";
+const CSS = "@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400;1,700&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400;1,600&display=swap'); *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; } body { background: #FAF0DC; } input:focus { outline: 2px solid #C9A84C; outline-offset: 1px; } button { transition: opacity .15s; } button:hover { opacity: .8; }";
