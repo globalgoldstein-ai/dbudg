@@ -1,4 +1,4 @@
-// D-Budg | Session 2 | Build 3 | 2026-04-18 | Selectable scenario tiles, auto Fidelity draw, configurable balance
+// D-Budg | Session 2 | Build 4 | 2026-04-18 | Badge fix, NaN fix, localStorage fallback
 
 import { useState, useEffect } from "react";
 import {
@@ -88,7 +88,7 @@ export default function App() {
   const houseNetRent       = calcHouseNet({ ...house, rentInstead: true  });
   const houseNetBuy        = calcHouseNet({ ...house, rentInstead: false });
   const houseNet           = house.rentInstead ? houseNetRent : houseNetBuy;
-  const nestEgg            = house.fidelityBalance + houseNet;
+  const nestEgg            = (house.fidelityBalance || 75883) + houseNet;
 
   const runway = (() => {
     let bal = nestEgg, draw = monthlyDraw;
@@ -155,19 +155,19 @@ function Dashboard({ nestEgg, houseNetRent, houseNetBuy, house, setHouse, monthl
         {/* Clickable rent tile */}
         <div style={{ ...S.stat, background: "#FFF9EF", border: rentSelected ? "2px solid #C9A84C" : "1px solid #F0DEB4", cursor: "pointer", position: "relative" }}
           onClick={() => setHouse(h => ({ ...h, rentInstead: true }))}>
-          {rentSelected && <div style={S.badge}>✓ Selected</div>}
           <div style={{ ...S.statLbl, color: "#9A8060" }}>House Proceeds — Rent</div>
           <div style={{ ...S.statVal, color: rentSelected ? "#C9A84C" : "#1A1208" }}>{fmt(houseNetRent)}</div>
           <div style={{ ...S.statSub, color: "#9A8060" }}>Keep full proceeds</div>
+          {rentSelected && <div style={{ ...S.badge, position: "relative", top: "auto", right: "auto", marginTop: 8, display: "inline-block" }}>✓ Selected</div>}
         </div>
 
         {/* Clickable buy tile */}
         <div style={{ ...S.stat, background: "#FFF9EF", border: !rentSelected ? "2px solid #C9A84C" : "1px solid #F0DEB4", cursor: "pointer", position: "relative" }}
           onClick={() => setHouse(h => ({ ...h, rentInstead: false }))}>
-          {!rentSelected && <div style={S.badge}>✓ Selected</div>}
           <div style={{ ...S.statLbl, color: "#9A8060" }}>House Proceeds — Buy</div>
           <div style={{ ...S.statVal, color: !rentSelected ? "#C9A84C" : "#1A1208" }}>{fmt(houseNetBuy)}</div>
           <div style={{ ...S.statSub, color: "#9A8060" }}>After down payment</div>
+          {!rentSelected && <div style={{ ...S.badge, position: "relative", top: "auto", right: "auto", marginTop: 8, display: "inline-block" }}>✓ Selected</div>}
         </div>
 
         <Stat label="Total Nest Egg" value={fmt(nestEgg)} sub={rentSelected ? "Rent scenario" : "Buy scenario"} theme="gold" />
