@@ -157,7 +157,7 @@ export default function App() {
 }
 
 function Nav({ screen, setScreen }) {
-  const tabs = [["dashboard", "Dashboard"], ["budget", "Budget"], ["house", "House Deal"], ["projection", "Projection"]];
+  const tabs = [["dashboard", "Dashboard"], ["budget", "Budget"], ["house", "House Sale"], ["projection", "Cash & Investments"]];
   return (
     <nav style={S.nav}>
       <div style={S.brand}>D·Budg</div>
