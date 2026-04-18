@@ -32,4 +32,4 @@ const SEED_HOUSE = {
 };
 
 const SEED_INCOME = { socialSecurity: 1900 };
-const SEED_PROJ   = { strategy: "moneyMarket", returnPct: 2.5, inflationPct: 2.5, man​​​​​​​​​​​​​​​​
+const SEED_PROJ   = { strategy: "moneyMarket", returnPct: 2.5, inflationPct: 2.5, manualReturn: false };​​​​​​​​​
