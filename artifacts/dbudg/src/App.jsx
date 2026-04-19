@@ -1,4 +1,4 @@
-// Build 9 | 2026-04-18 | Lifetime Income subtitle clarified
+// D-Budg | Session 4 | Build 2 | 2026-04-19 09:00 ET | Fix rentSelected reference in Total Nest Egg tile
 
 import { useState, useEffect } from "react";
 import {
@@ -183,7 +183,7 @@ export default function App() {
 }
 
 function Nav({ screen, setScreen }) {
-  const tabs = [["dashboard", "Dashboard"], ["budget", "Budget"], ["house", "House Deal"], ["projection", "Cash & Investments"]];
+  const tabs = [["dashboard", "Dashboard"], ["budget", "Budget"], ["house", "House Sale"], ["projection", "Cash & Investments"]];
   return (
     <nav style={S.nav}>
       <div style={S.brand}>D·Budg</div>
@@ -225,8 +225,7 @@ function JoshTile({ house, setHouse }) {
 
 function Dashboard({ nestEgg, houseNetRent, houseNetBuy, house, setHouse, monthlyDraw, runway, tenYrDelta, proj, setProj, totalIncome, totalExpenses }) {
   const runoutSoon = runway.date && runway.years < 5;
-  const rentSelected = house.rentInstead;
-  const [cityToast, setCityToast] = useState(null);
+const [cityToast, setCityToast] = useState(null);
 
   const handleCityTap = (city) => {
     setCityToast(city);
@@ -269,22 +268,9 @@ function Dashboard({ nestEgg, houseNetRent, houseNetBuy, house, setHouse, monthl
       </div>
       <div style={S.statGrid}>
         <Stat label="Fidelity Account" value={fmt(house.fidelityBalance)} sub={"As of " + house.fidelityDate} />
-        <div style={{ ...S.stat, background: "#FFF9EF", border: rentSelected ? "2px solid #C9A84C" : "1px solid #F0DEB4", cursor: "pointer", position: "relative" }}
-          onClick={() => setHouse(h => ({ ...h, rentInstead: true }))}>
-          <div style={{ ...S.statLbl, color: "#9A8060" }}>House Proceeds</div>
-          <div style={{ ...S.statVal, color: rentSelected ? "#C9A84C" : "#1A1208" }}>{fmt(houseNetRent)}</div>
-          <div style={{ ...S.statSub, color: "#9A8060" }}>Rent Scenario</div>
-          {rentSelected && <div style={{ ...S.badge, position: "relative", top: "auto", right: "auto", marginTop: 8, display: "inline-block" }}>✓ Selected</div>}
-        </div>
-        <div style={{ ...S.stat, background: "#FFF9EF", border: !rentSelected ? "2px solid #C9A84C" : "1px solid #F0DEB4", cursor: "pointer", position: "relative" }}
-          onClick={() => setHouse(h => ({ ...h, rentInstead: false }))}>
-          <div style={{ ...S.statLbl, color: "#9A8060" }}>House Proceeds</div>
-          <div style={{ ...S.statVal, color: !rentSelected ? "#C9A84C" : "#1A1208" }}>{fmt(houseNetBuy)}</div>
-          <div style={{ ...S.statSub, color: "#9A8060" }}>Buy Scenario</div>
-          {!rentSelected && <div style={{ ...S.badge, position: "relative", top: "auto", right: "auto", marginTop: 8, display: "inline-block" }}>✓ Selected</div>}
-        </div>
+<Stat label="House Proceeds" value={fmt(houseNetRent)} sub="Rent Scenario" />
         <JoshTile house={house} setHouse={setHouse} />
-        <Stat label="Total Nest Egg After House Sale" value={fmt(nestEgg)} sub={rentSelected ? "Rent scenario" : "Buy scenario"} theme="gold" />
+       <Stat label="Total Nest Egg After House Sale" value={fmt(nestEgg)} sub="Rent scenario" theme="gold" />
         <Stat label="Monthly Draw" value={fmt(monthlyDraw)} sub="From nest egg (expenses − SS)" theme="danger" />
         <Stat
           label="To Last 10 Years"
