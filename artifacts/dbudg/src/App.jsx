@@ -1,4 +1,4 @@
-// D-Budg | Session 4 | Build 2 | 2026-04-19 09:00 ET | Fix rentSelected reference in Total Nest Egg tile
+// D-Budg | Session 4 | Build 3 | 2026-04-20 10:00 ET | Add Aetna Medicare A&B budget line
 
 import { useState, useEffect } from "react";
 import {
@@ -8,14 +8,14 @@ import {
 const SEED_DMV = {
   rent: 2100, hoa: 0, insurance: 30, utilities: 200, uber: 200,
   medication: 400, housekeeper: 200, cable: 75, mobile: 50,
-  cigarettes: 280, groceries: 800, personal: 400,
+cigarettes: 280, groceries: 800, personal: 400, aetna: 359,
 };
 
 const DMV_LABELS = {
   rent: "Rent", hoa: "HOA", insurance: "Home / Renters Insurance",
   utilities: "Utilities", uber: "Uber / Transit", medication: "Medical",
   housekeeper: "Housekeeper", cable: "Cable / Internet", mobile: "Mobile Phone",
-  cigarettes: "Cigarettes", groceries: "Groceries", personal: "Skin Care, Hair & Clothing",
+  cigarettes: "Cigarettes", groceries: "Groceries", personal: "Skin Care, Hair & Clothing", aetna: "Aetna Medicare A&B",
 };
 
 const SEED_HOUSE = {
@@ -29,7 +29,7 @@ const SEED_HOUSE = {
 const SEED_INCOME = { socialSecurity: 1900 };
 const SEED_PROJ = { strategy: "moneyMarket", returnPct: 2.5, inflationPct: 2.5, manualReturn: false };
 const STARTING_AGE = 78;
-const PROJECTION_YEARS = 25;
+const Math.min(Math.ceil(runway.years + 3), 30);
 
 const LS = {
   get: (key, fallback) => {
