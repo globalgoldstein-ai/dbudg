@@ -1,4 +1,4 @@
-// D-Budg | Session 4 | Build 3 | 2026-04-20 10:00 ET | Add Aetna Medicare A&B budget line
+// D-Budg | Session 4 | Build 4 | 2026-04-20 14:30 ET | Fix dynamic projection years — syntax error
 
 import { useState, useEffect } from "react";
 import {
@@ -29,7 +29,7 @@ const SEED_HOUSE = {
 const SEED_INCOME = { socialSecurity: 1900 };
 const SEED_PROJ = { strategy: "moneyMarket", returnPct: 2.5, inflationPct: 2.5, manualReturn: false };
 const STARTING_AGE = 78;
-const Math.min(Math.ceil(runway.years + 3), 30);
+const PROJECTION_YEARS = 30;
 
 const LS = {
   get: (key, fallback) => {
@@ -53,13 +53,13 @@ function calcHouseNet(h) {
   return h.rentInstead ? net : net - h.downPayment;
 }
 
-function buildProjectionLine(nestEgg, monthlyDraw, returnPct, inflationPct) {
+function buildProjectionLine(nestEgg, monthlyDraw, returnPct, inflationPct, years) {
   const data = [];
   let balance = nestEgg, draw = monthlyDraw;
   const mReturn = returnPct / 100 / 12, mInflation = inflationPct / 100 / 12;
-  for (let yr = 0; yr <= PROJECTION_YEARS; yr++) {
+  for (let yr = 0; yr <= years; yr++) {
     data.push({ yr, age: STARTING_AGE + yr, balance: Math.round(balance) });
-    if (yr === PROJECTION_YEARS) break;
+    if (yr === years) break;
     for (let m = 0; m < 12; m++) { balance = balance * (1 + mReturn) - draw; draw *= (1 + mInflation); }
   }
   return data;
@@ -176,7 +176,7 @@ export default function App() {
         )}
         {screen === "budget" && <Budget dmv={dmv} setDmv={setDmv} income={income} setIncome={setIncome} fidelityWithdrawal={fidelityWithdrawal} resetAll={resetAll} />}
         {screen === "house" && <HouseDeal house={house} setHouse={setHouse} houseNet={houseNet} />}
-        {screen === "projection" && <Projection nestEgg={nestEgg} monthlyDraw={monthlyDraw} proj={proj} setProj={setProj} />}
+        {screen === "projection" && <Projection nestEgg={nestEgg} monthlyDraw={monthlyDraw} proj={proj} setProj={setProj} runway={runway} />}
       </div>
     </div>
   );
@@ -412,11 +412,12 @@ function HRow({ label, field, house, up, pct }) {
   );
 }
 
-function Projection({ nestEgg, monthlyDraw, proj, setProj }) {
+function Projection({ nestEgg, monthlyDraw, proj, setProj, runway }) {
   const up = (k, v) => setProj(p => ({ ...p, [k]: v }));
-  const mmLine = buildProjectionLine(nestEgg, monthlyDraw, 2.5, proj.inflationPct);
-  const fishLine = buildProjectionLine(nestEgg, monthlyDraw, 5.0, proj.inflationPct);
-  const curLine = buildProjectionLine(nestEgg, monthlyDraw, proj.returnPct, proj.inflationPct);
+  const projYears = Math.min(Math.ceil(runway.years + 3), 30);
+  const mmLine = buildProjectionLine(nestEgg, monthlyDraw, 2.5, proj.inflationPct, projYears);
+  const fishLine = buildProjectionLine(nestEgg, monthlyDraw, 5.0, proj.inflationPct, projYears);
+  const curLine = buildProjectionLine(nestEgg, monthlyDraw, proj.returnPct, proj.inflationPct, projYears);
   const chartData = mmLine.map((d, i) => ({
     label: i === 0 ? "Now" : i + "yr", age: d.age,
     "Money Market": mmLine[i].balance,
