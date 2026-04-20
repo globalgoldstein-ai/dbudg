@@ -7,7 +7,7 @@ import {
 
 const SEED_DMV = {
   rent: 2100, hoa: 0, insurance: 30, utilities: 200, uber: 200,
-  aetna: 359, medication: 400, housekeeper: 200, cable: 75, mobile: 50,
+  aetna: 359, medication: 50, housekeeper: 200, cable: 75, mobile: 50,
   cigarettes: 280, groceries: 800, personal: 400,
 };
 
