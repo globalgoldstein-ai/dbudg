@@ -1,4 +1,4 @@
-// D-Budg | Session 4 | Build 4 | 2026-04-20 14:30 ET | Fix dynamic projection years — syntax error
+// D-Budg | Session 4 | Build 5 | 2026-04-20 14:45 ET | Full rebuild: Aetna fix + reorder, dynamic chart, remove buy tile
 
 import { useState, useEffect } from "react";
 import {
@@ -7,15 +7,16 @@ import {
 
 const SEED_DMV = {
   rent: 2100, hoa: 0, insurance: 30, utilities: 200, uber: 200,
-  medication: 400, housekeeper: 200, cable: 75, mobile: 50,
-cigarettes: 280, groceries: 800, personal: 400, aetna: 359,
+  aetna: 359, medication: 400, housekeeper: 200, cable: 75, mobile: 50,
+  cigarettes: 280, groceries: 800, personal: 400,
 };
 
 const DMV_LABELS = {
   rent: "Rent", hoa: "HOA", insurance: "Home / Renters Insurance",
-  utilities: "Utilities", uber: "Uber / Transit", medication: "Medical",
+  utilities: "Utilities", uber: "Uber / Transit",
+  aetna: "Aetna Medicare A&B", medication: "Medical",
   housekeeper: "Housekeeper", cable: "Cable / Internet", mobile: "Mobile Phone",
-  cigarettes: "Cigarettes", groceries: "Groceries", personal: "Skin Care, Hair & Clothing", aetna: "Aetna Medicare A&B",
+  cigarettes: "Cigarettes", groceries: "Groceries", personal: "Skin Care, Hair & Clothing",
 };
 
 const SEED_HOUSE = {
@@ -23,7 +24,7 @@ const SEED_HOUSE = {
   repairs: 0, moving: 10000, condoPrice: 300000, downPayment: 100000,
   capGainsRate: 0, rentInstead: true,
   fidelityBalance: 75883, fidelityDate: "April 2026",
-  joshGift: 30000,
+  joshGift: 15000,
 };
 
 const SEED_INCOME = { socialSecurity: 1900 };
@@ -123,7 +124,7 @@ function NumInput({ val, onChange, pct }) {
 
 export default function App() {
   const [screen, setScreen] = useState("dashboard");
-  const [dmv, setDmv] = useState(() => LS.get("dmv", SEED_DMV));
+  const [dmv, setDmv] = useState(() => ({ ...SEED_DMV, ...LS.get("dmv", {}) }));
   const [income, setIncome] = useState(() => LS.get("income", SEED_INCOME));
   const [house, setHouse] = useState(() => ({ ...SEED_HOUSE, ...LS.get("house", {}) }));
   const [proj, setProj] = useState(() => LS.get("proj", SEED_PROJ));
@@ -138,8 +139,7 @@ export default function App() {
   const monthlyDraw = fidelityWithdrawal;
   const houseNetRent = calcHouseNet({ ...house, rentInstead: true });
   const houseNetBuy = calcHouseNet({ ...house, rentInstead: false });
-  const houseNet = house.rentInstead ? houseNetRent : houseNetBuy;
-  const nestEgg = (house.fidelityBalance || 75883) + houseNet - (house.joshGift || 0);
+  const nestEgg = (house.fidelityBalance || 75883) + houseNetRent - (house.joshGift || 0);
 
   const runway = (() => {
     let bal = nestEgg, draw = monthlyDraw;
@@ -175,7 +175,7 @@ export default function App() {
           />
         )}
         {screen === "budget" && <Budget dmv={dmv} setDmv={setDmv} income={income} setIncome={setIncome} fidelityWithdrawal={fidelityWithdrawal} resetAll={resetAll} />}
-        {screen === "house" && <HouseDeal house={house} setHouse={setHouse} houseNet={houseNet} />}
+        {screen === "house" && <HouseDeal house={house} setHouse={setHouse} houseNet={houseNetRent} />}
         {screen === "projection" && <Projection nestEgg={nestEgg} monthlyDraw={monthlyDraw} proj={proj} setProj={setProj} runway={runway} />}
       </div>
     </div>
@@ -223,9 +223,9 @@ function JoshTile({ house, setHouse }) {
   );
 }
 
-function Dashboard({ nestEgg, houseNetRent, houseNetBuy, house, setHouse, monthlyDraw, runway, tenYrDelta, proj, setProj, totalIncome, totalExpenses }) {
+function Dashboard({ nestEgg, houseNetRent, house, setHouse, monthlyDraw, runway, tenYrDelta, proj, setProj, totalIncome, totalExpenses }) {
   const runoutSoon = runway.date && runway.years < 5;
-const [cityToast, setCityToast] = useState(null);
+  const [cityToast, setCityToast] = useState(null);
 
   const handleCityTap = (city) => {
     setCityToast(city);
@@ -268,9 +268,15 @@ const [cityToast, setCityToast] = useState(null);
       </div>
       <div style={S.statGrid}>
         <Stat label="Fidelity Account" value={fmt(house.fidelityBalance)} sub={"As of " + house.fidelityDate} />
-<Stat label="House Proceeds" value={fmt(houseNetRent)} sub="Rent Scenario" />
+        <Stat label="House Proceeds" value={fmt(houseNetRent)} sub="Rent Scenario" />
         <JoshTile house={house} setHouse={setHouse} />
-       <Stat label="Total Nest Egg After House Sale" value={fmt(nestEgg)} sub="Rent scenario" theme="gold" />
+        <Stat label="Total Nest Egg After House Sale" value={fmt(nestEgg)} sub="Rent scenario" theme="gold" />
+        <div style={{ ...S.stat, background: "#1A1208", border: "2px solid #C9A84C", cursor: "pointer" }}
+          onClick={toggleStrategy}>
+          <div style={{ ...S.statLbl, color: "#9A8060" }}>Investment Strategy</div>
+          <div style={{ ...S.statVal, color: "#C9A84C", fontSize: 18, lineHeight: 1.3 }}>{stratLabel}</div>
+          <div style={{ ...S.statSub, color: "#7A6040" }}>Tap to toggle · adjust on Cash & Investments tab</div>
+        </div>
         <Stat label="Monthly Draw" value={fmt(monthlyDraw)} sub="From nest egg (expenses − SS)" theme="danger" />
         <Stat
           label="To Last 10 Years"
@@ -278,22 +284,16 @@ const [cityToast, setCityToast] = useState(null);
           sub={tenYrDelta > 0.5 ? "Cut per month" : tenYrDelta < -0.5 ? "Monthly headroom" : "Right on target"}
           theme={tenYrDelta > 0.5 ? "danger" : "gold"}
         />
-        <div style={{ ...S.stat, background: "#1A1208", border: "2px solid #C9A84C", cursor: "pointer" }}
-          onClick={toggleStrategy}>
-          <div style={{ ...S.statLbl, color: "#9A8060" }}>Investment Strategy</div>
-          <div style={{ ...S.statVal, color: "#C9A84C", fontSize: 18, lineHeight: 1.3 }}>{stratLabel}</div>
-          <div style={{ ...S.statSub, color: "#7A6040" }}>Tap to toggle · adjust on Cash & Investments tab</div>
-        </div>
         <Stat
           label="Lifetime Income"
           value={fmt(totalIncome)}
-       sub={"During runway · SS + Fidelity draws · " + runwayLabel}
+          sub={"During runway · SS + Fidelity draws · " + runwayLabel}
           theme="gold"
         />
         <Stat
           label="Lifetime Expenses"
           value={fmt(totalExpenses)}
-sub={"During runway · longer strategy = higher total · " + runwayLabel}
+          sub={"During runway · longer strategy = higher total · " + runwayLabel}
           theme="danger"
         />
       </div>
@@ -397,7 +397,7 @@ function HouseDeal({ house, setHouse, houseNet }) {
       <div style={{ ...S.card, background: "#1A1208", textAlign: "center", padding: 32 }}>
         <div style={{ color: "#9A8060", fontSize: 12, textTransform: "uppercase", letterSpacing: 3, marginBottom: 8 }}>Net to Nest Egg</div>
         <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 52, fontWeight: 700, color: houseNet < 0 ? "#FF6868" : "#C9A84C" }}>{fmt(houseNet)}</div>
-        <div style={{ color: "#7A6040", fontSize: 13, fontStyle: "italic", marginTop: 8 }}>{house.rentInstead ? "Rent scenario — full proceeds kept" : "Buy scenario — down payment deducted"}</div>
+        <div style={{ color: "#7A6040", fontSize: 13, fontStyle: "italic", marginTop: 8 }}>Rent scenario — full proceeds kept</div>
       </div>
     </div>
   );
